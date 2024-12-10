@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Vision Board</title>
+    <style>
+        /* Same styles as before for container, categories, board, etc. */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f8e8d6, #dfd1f4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 95%;
+            height: 95%;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .header {
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #5a5255;
+            background: #f7f4ef;
+            border-bottom: 2px solid #ded3ce;
+        }
+
+        .content {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .categories {
+            width: 30%;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f9f8f7;
+            border-right: 2px solid #ded3ce;
+        }
+
+        .category {
+            margin-bottom: 20px;
+        }
+
+        .category-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #5a5255;
+        }
+
+        .category-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .image {
+            width: 80px;
+            height: 80px;
+            background-size: cover;
+            background-position: center;
+            border-radius: 8px;
+            cursor: grab;
+        }
+
+        .board {
+            flex: 1;
+            position: relative;
+            background: linear-gradient(145deg, #f8f3ec, #f1ebe6);
+            border-left: 2px solid #ded3ce;
+        }
+
+        .board::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://www.transparenttextures.com/patterns/paper.png') repeat;
+            opacity: 0.2;
+        }
+
+        .item {
+            position: absolute;
+            cursor: grab;
+            transform: rotate(0deg);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .item img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+
+        .resize-handle {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            width: 15px;
+            height: 15px;
+            background: #fff;
+            border: 2px solid #aaa;
+            border-radius: 50%;
+            cursor: nwse-resize;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">Dynamic Vision Board with Pexels</div>
+        <div class="content">
+            <div class="categories" id="categories">
+                <!-- Categories dynamically populated here -->
+            </div>
+            <div class="board" id="board"></div>
+        </div>
+    </div>
+
+    <script>
+        const PEXELS_API_KEY = 'YOUR_PEXELS_API_KEY';
+        const categories = [
+            { name: 'Travel', query: 'travel' },
+            { name: 'Health', query: 'health' },
+            { name: 'Wealth', query: 'money' },
+            { name: 'Growth', query: 'growth' },
+        ];
+
+        const categoriesContainer = document.getElementById('categories');
+
+        // Fetch images from Pexels API
+        async function fetchImages(query) {
+            const response = await fetch(`https://api.pexels.com/v1/search?query=${query}&per_page=8`, {
+                headers: {
+                    Authorization: PEXELS_API_KEY,
+                },
+            });
+            const data = await response.json();
+            return data.photos.map(photo => photo.src.small);
+        }
+
+        async function loadCategories() {
+            for (const category of categories) {
+                const images = await fetchImages(category.query);
+
+                const categoryDiv = document.createElement('div');
+                categoryDiv.classList.add('category');
+
+                const categoryTitle = document.createElement('div');
+                categoryTitle.classList.add('category-title');
+                categoryTitle.textContent = category.name;
+
+                const categoryImages = document.createElement('div');
+                categoryImages.classList.add('category-images');
+
+                images.forEach(imageUrl => {
+                    const imageDiv = document.createElement('div');
+                    imageDiv.classList.add('image');
+                    imageDiv.style.backgroundImage = `url('${imageUrl}')`;
+                    imageDiv.draggable = true;
+
+                    imageDiv.addEventListener('dragstart', () => {
+                        imageDiv.classList.add('dragging');
+                    });
+
+                    imageDiv.addEventListener('dragend', (event) => {
+                        const newImg = document.createElement('div');
+                        newImg.classList.add('item');
+                        newImg.style.left = `${event.clientX - 40}px`;
+                        newImg.style.top = `${event.clientY - 40}px`;
+                        newImg.innerHTML = `<img src="${imageUrl}">
+                                            <div class="resize-handle"></div>`;
+
+                        // Enable resizing
+                        const resizeHandle = newImg.querySelector('.resize-handle');
+                        resizeHandle.addEventListener('mousedown', (e) => {
+                            const onMouseMove = (e) => {
+                                const width = e.clientX - newImg.offsetLeft;
+                                newImg.style.width = `${width}px`;
+                            };
+                            document.addEventListener('mousemove', onMouseMove);
+                            document.addEventListener('mouseup', () => {
+                                document.removeEventListener('mousemove', onMouseMove);
+                            }, { once: true });
+                        });
+
+                        document.getElementById('board').appendChild(newImg);
+                        imageDiv.classList.remove('dragging');
+                    });
+
+                    categoryImages.appendChild(imageDiv);
+                });
+
+                categoryDiv.appendChild(categoryTitle);
+                categoryDiv.appendChild(categoryImages);
+                categoriesContainer.appendChild(categoryDiv);
+            }
+        }
+
+        loadCategories();
+    </script>
+</body>
+</html>
