@@ -1,222 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Vision Board</title>
-    <style>
-        /* Same styles as before for container, categories, board, etc. */
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #f8e8d6, #dfd1f4);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 95%;
-            height: 95%;
-            background: #fff;
-            border-radius: 20px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            position: relative;
-        }
-
-        .header {
-            width: 100%;
-            padding: 20px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            color: #5a5255;
-            background: #f7f4ef;
-            border-bottom: 2px solid #ded3ce;
-        }
-
-        .content {
-            display: flex;
-            width: 100%;
-            height: 100%;
-        }
-
-        .categories {
-            width: 30%;
-            padding: 20px;
-            overflow-y: auto;
-            background: #f9f8f7;
-            border-right: 2px solid #ded3ce;
-        }
-
-        .category {
-            margin-bottom: 20px;
-        }
-
-        .category-title {
-            font-size: 18px;
-            margin-bottom: 10px;
-            color: #5a5255;
-        }
-
-        .category-images {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .image {
-            width: 80px;
-            height: 80px;
-            background-size: cover;
-            background-position: center;
-            border-radius: 8px;
-            cursor: grab;
-        }
-
-        .board {
-            flex: 1;
-            position: relative;
-            background: linear-gradient(145deg, #f8f3ec, #f1ebe6);
-            border-left: 2px solid #ded3ce;
-        }
-
-        .board::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: url('https://www.transparenttextures.com/patterns/paper.png') repeat;
-            opacity: 0.2;
-        }
-
-        .item {
-            position: absolute;
-            cursor: grab;
-            transform: rotate(0deg);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-
-        .item img {
-            max-width: 100%;
-            border-radius: 8px;
-        }
-
-        .resize-handle {
-            position: absolute;
-            bottom: -5px;
-            right: -5px;
-            width: 15px;
-            height: 15px;
-            background: #fff;
-            border: 2px solid #aaa;
-            border-radius: 50%;
-            cursor: nwse-resize;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vision Board Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    #board {
+      width: 80%;
+      height: 500px;
+      border: 2px dashed #ccc;
+      margin: 20px auto;
+      position: relative;
+    }
+    #search-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #search-container input {
+      width: 300px;
+      padding: 10px;
+      margin-right: 10px;
+    }
+    #search-container button {
+      padding: 10px 20px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #search-results {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .search-image {
+      width: 150px;
+      height: 100px;
+      background-size: cover;
+      background-position: center;
+      border: 2px solid #ddd;
+      border-radius: 5px;
+      cursor: grab;
+    }
+    .item img {
+      max-width: 100%;
+      height: auto;
+    }
+    .resize-handle {
+      width: 10px;
+      height: 10px;
+      background: white;
+      border: 1px solid black;
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      cursor: nwse-resize;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">Dynamic Vision Board with Pexels</div>
-        <div class="content">
-            <div class="categories" id="categories">
-                <!-- Categories dynamically populated here -->
-            </div>
-            <div class="board" id="board"></div>
-        </div>
-    </div>
 
-    <script>
-        const PEXELS_API_KEY = 'YOUR_PEXELS_API_KEY';
-        const categories = [
-            { name: 'Travel', query: 'travel' },
-            { name: 'Health', query: 'health' },
-            { name: 'Wealth', query: 'money' },
-            { name: 'Growth', query: 'growth' },
-        ];
+<div id="search-container">
+  <input type="text" id="search-input" placeholder="Enter a keyword (e.g., nature)">
+  <button onclick="searchImages()">Search Images</button>
+</div>
 
-        const categoriesContainer = document.getElementById('categories');
+<div id="search-results"></div>
 
-        // Fetch images from Pexels API
-        async function fetchImages(query) {
-            const response = await fetch(`https://api.pexels.com/v1/search?query=${query}&per_page=8`, {
-                headers: {
-                    Authorization: PEXELS_API_KEY,
-                },
-            });
-            const data = await response.json();
-            return data.photos.map(photo => photo.src.small);
-        }
+<div id="board"></div>
 
-        async function loadCategories() {
-            for (const category of categories) {
-                const images = await fetchImages(category.query);
+<script>
+  const PEXELS_API_KEY = 'YOUR_PEXELS_API_KEY'; // Replace with your actual API key
+  const searchResultsContainer = document.getElementById('search-results');
+  const board = document.getElementById('board');
 
-                const categoryDiv = document.createElement('div');
-                categoryDiv.classList.add('category');
+  async function searchImages() {
+    const query = document.getElementById('search-input').value.trim();
+    if (!query) {
+      alert('Please enter a keyword.');
+      return;
+    }
 
-                const categoryTitle = document.createElement('div');
-                categoryTitle.classList.add('category-title');
-                categoryTitle.textContent = category.name;
+    try {
+      const response = await fetch(`https://api.pexels.com/v1/search?query=${query}&per_page=10`, {
+        headers: { Authorization: PEXELS_API_KEY },
+      });
 
-                const categoryImages = document.createElement('div');
-                categoryImages.classList.add('category-images');
+      if (!response.ok) {
+        alert('Failed to fetch images. Please try again.');
+        return;
+      }
 
-                images.forEach(imageUrl => {
-                    const imageDiv = document.createElement('div');
-                    imageDiv.classList.add('image');
-                    imageDiv.style.backgroundImage = `url('${imageUrl}')`;
-                    imageDiv.draggable = true;
+      const data = await response.json();
+      displaySearchResults(data.photos);
+    } catch (error) {
+      console.error('Error fetching images:', error);
+      alert('An error occurred. Please try again.');
+    }
+  }
 
-                    imageDiv.addEventListener('dragstart', () => {
-                        imageDiv.classList.add('dragging');
-                    });
+  function displaySearchResults(photos) {
+    searchResultsContainer.innerHTML = '';
+    if (photos.length === 0) {
+      searchResultsContainer.innerHTML = '<p>No results found.</p>';
+      return;
+    }
 
-                    imageDiv.addEventListener('dragend', (event) => {
-                        const newImg = document.createElement('div');
-                        newImg.classList.add('item');
-                        newImg.style.left = `${event.clientX - 40}px`;
-                        newImg.style.top = `${event.clientY - 40}px`;
-                        newImg.innerHTML = `<img src="${imageUrl}">
-                                            <div class="resize-handle"></div>`;
+    photos.forEach(photo => {
+      const imgDiv = document.createElement('div');
+      imgDiv.classList.add('search-image');
+      imgDiv.style.backgroundImage = `url('${photo.src.small}')`;
+      imgDiv.draggable = true;
 
-                        // Enable resizing
-                        const resizeHandle = newImg.querySelector('.resize-handle');
-                        resizeHandle.addEventListener('mousedown', (e) => {
-                            const onMouseMove = (e) => {
-                                const width = e.clientX - newImg.offsetLeft;
-                                newImg.style.width = `${width}px`;
-                            };
-                            document.addEventListener('mousemove', onMouseMove);
-                            document.addEventListener('mouseup', () => {
-                                document.removeEventListener('mousemove', onMouseMove);
-                            }, { once: true });
-                        });
+      imgDiv.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('imageUrl', photo.src.small);
+      });
 
-                        document.getElementById('board').appendChild(newImg);
-                        imageDiv.classList.remove('dragging');
-                    });
+      searchResultsContainer.appendChild(imgDiv);
+    });
+  }
 
-                    categoryImages.appendChild(imageDiv);
-                });
+  board.addEventListener('dragover', (e) => e.preventDefault());
 
-                categoryDiv.appendChild(categoryTitle);
-                categoryDiv.appendChild(categoryImages);
-                categoriesContainer.appendChild(categoryDiv);
-            }
-        }
+  board.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const imageUrl = e.dataTransfer.getData('imageUrl');
+    if (imageUrl) {
+      const imgDiv = document.createElement('div');
+      imgDiv.classList.add('item');
+      imgDiv.style.left = `${e.clientX - board.offsetLeft}px`;
+      imgDiv.style.top = `${e.clientY - board.offsetTop}px`;
+      imgDiv.style.position = 'absolute';
+      imgDiv.innerHTML = `<img src="${imageUrl}" draggable="false">
+                          <div class="resize-handle"></div>`;
 
-        loadCategories();
-    </script>
+      const resizeHandle = imgDiv.querySelector('.resize-handle');
+      resizeHandle.addEventListener('mousedown', (e) => {
+        const onMouseMove = (event) => {
+          const width = event.clientX - imgDiv.offsetLeft;
+          imgDiv.style.width = `${width}px`;
+        };
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', () => {
+          document.removeEventListener('mousemove', onMouseMove);
+        }, { once: true });
+      });
+
+      board.appendChild(imgDiv);
+    }
+  });
+</script>
+
 </body>
 </html>
+
