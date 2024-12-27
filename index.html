@@ -35,61 +35,75 @@
                 flex-direction: column;
                 height: 100%;
             }
-            .search-section {
-                width: 100%;
-                height: 35%;
-                border-right: none;
-                border-bottom: 2px solid #ded3ce;
-            }
-            .board {
-                height: 65%;
-            }
         }
 
-        .search-section {
-            width: 300px;
-            background: #f7f4ef;
-            padding: 10px;
-            border-right: 2px solid #ded3ce;
-            overflow-y: auto;
+        .search-icon {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            background: url('https://cdn-icons-png.flaticon.com/512/622/622669.png') no-repeat center center / cover;
+            cursor: pointer;
         }
 
-        .header {
+        .search-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .search-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
             text-align: center;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .close-search {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff6b6b;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
             font-size: 18px;
-            margin-bottom: 10px;
-            color: #5a5255;
-            font-weight: bold;
+            cursor: pointer;
         }
 
-        .search-bar {
-            display: flex;
-            padding-bottom: 10px;
+        .close-search:hover {
+            background: #ff4a4a;
         }
 
-        .search-input {
-            flex: 1;
-            padding: 8px;
-            font-size: 14px;
+        .search-container input {
+            width: 80%;
+            padding: 10px;
+            font-size: 16px;
             border-radius: 5px;
             border: 1px solid #ccc;
-            margin-right: 5px;
-        }
-
-        .search-button {
-            background-color: #6c63ff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 8px 12px;
-            cursor: pointer;
+            margin-bottom: 10px;
         }
 
         .suggestions {
             display: flex;
             flex-wrap: wrap;
             gap: 5px;
-            margin: 10px 0;
+            justify-content: center;
+            margin-bottom: 10px;
         }
 
         .suggestion {
@@ -112,6 +126,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
+            justify-content: center;
         }
 
         .result-item {
@@ -155,34 +170,32 @@
 </head>
 <body>
     <div class="vision-board-container">
-        <div class="search-section">
-            <div class="header">Search Images</div>
-            <div class="search-bar">
-                <input type="text" class="search-input" id="searchInput" placeholder="Search for images...">
-                <button class="search-button" id="searchButton">Search</button>
-            </div>
-            <div class="suggestions" id="suggestions">
-                <div class="suggestion">Travel</div>
-                <div class="suggestion">Fitness</div>
-                <div class="suggestion">Career</div>
-                <div class="suggestion">Dream Home</div>
-                <div class="suggestion">Health</div>
-                <div class="suggestion">Motivation</div>
-                <div class="suggestion">Happiness</div>
-                <div class="suggestion">Luxury</div>
-                <div class="suggestion">Relationships</div>
-                <div class="suggestion">Success</div>
-            </div>
-            <div class="results" id="results"></div>
-        </div>
+        <div class="search-icon" id="searchIcon"></div>
         <div class="board" id="board"></div>
+
+        <div class="search-overlay" id="searchOverlay">
+            <div class="search-container">
+                <button class="close-search" id="closeSearch">✕</button>
+                <div class="suggestions" id="suggestions">
+                    <div class="suggestion">Travel</div>
+                    <div class="suggestion">Fitness</div>
+                    <div class="suggestion">Career</div>
+                    <div class="suggestion">Dream Home</div>
+                    <div class="suggestion">Health</div>
+                </div>
+                <input type="text" class="search-input" id="searchInput" placeholder="Search for images...">
+                <div class="results" id="results"></div>
+            </div>
+        </div>
     </div>
 
     <script>
         const board = document.getElementById('board');
         const results = document.getElementById('results');
         const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
+        const searchIcon = document.getElementById('searchIcon');
+        const searchOverlay = document.getElementById('searchOverlay');
+        const closeSearch = document.getElementById('closeSearch');
         const suggestions = document.getElementById('suggestions');
 
         const PEXELS_API_KEY = 'aG1p0sDYJnDp04TICSTZuhLuMso6dIUZDNJ9mdlAkxQ2E9QXziHTT5l8';
@@ -204,26 +217,35 @@
                 const imgDiv = document.createElement('div');
                 imgDiv.classList.add('result-item');
                 imgDiv.style.backgroundImage = `url(${photo.src.medium})`;
-                imgDiv.addEventListener('click', () => addToBoard(photo.src.medium));
+                imgDiv.addEventListener('click', () => {
+                    addToBoard(photo.src.medium);
+                    searchOverlay.style.display = 'none'; // Hide search overlay
+                });
                 results.appendChild(imgDiv);
             });
         }
 
-        // Attach search to button click
-        searchButton.addEventListener('click', () => {
-            const query = searchInput.value.trim();
-            displayResults(query);
+        searchIcon.addEventListener('click', () => {
+            searchOverlay.style.display = 'flex';
         });
 
-        // Handle suggestion clicks
+        closeSearch.addEventListener('click', () => {
+            searchOverlay.style.display = 'none';
+        });
+
         suggestions.addEventListener('click', (event) => {
             if (event.target.classList.contains('suggestion')) {
                 const suggestion = event.target.textContent;
+                searchInput.value = suggestion;
                 displayResults(suggestion);
             }
         });
 
-        // Add an image to the board
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.trim();
+            if (query) displayResults(query);
+        });
+
         function addToBoard(imageUrl) {
             const item = document.createElement('div');
             item.classList.add('item');
@@ -235,38 +257,36 @@
             resizeHandle.classList.add('resize-handle');
             item.appendChild(resizeHandle);
 
-            enableDragAndResize(item, resizeHandle);
+            enableDragAndResize(item);
             board.appendChild(item);
         }
 
-        // Dragging and resizing functionality
-        function enableDragAndResize(item, handle) {
+        function enableDragAndResize(item) {
             let isDragging = false, isResizing = false;
             let startX, startY, startWidth, startHeight;
 
             const startDrag = (e) => {
                 e.preventDefault();
                 isDragging = true;
-                const touch = e.touches ? e.touches[0] : e;
-                startX = touch.clientX;
-                startY = touch.clientY;
+                startX = e.clientX || e.touches[0].clientX;
+                startY = e.clientY || e.touches[0].clientY;
 
                 document.addEventListener('mousemove', drag);
                 document.addEventListener('mouseup', stopDrag);
-                document.addEventListener('touchmove', drag);
+                document.addEventListener('touchmove', drag, { passive: false });
                 document.addEventListener('touchend', stopDrag);
             };
 
             const drag = (e) => {
                 if (!isDragging) return;
-                const touch = e.touches ? e.touches[0] : e;
-                const dx = touch.clientX - startX;
-                const dy = touch.clientY - startY;
+                const dx = (e.clientX || e.touches[0].clientX) - startX;
+                const dy = (e.clientY || e.touches[0].clientY) - startY;
 
                 item.style.left = `${item.offsetLeft + dx}px`;
                 item.style.top = `${item.offsetTop + dy}px`;
-                startX = touch.clientX;
-                startY = touch.clientY;
+
+                startX += dx;
+                startY += dy;
             };
 
             const stopDrag = () => {
@@ -279,24 +299,23 @@
 
             const startResize = (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 isResizing = true;
-                const touch = e.touches ? e.touches[0] : e;
-                startX = touch.clientX;
-                startY = touch.clientY;
-                startWidth = item.offsetWidth;
-                startHeight = item.offsetHeight;
+                startX = e.clientX || e.touches[0].clientX;
+                startY = e.clientY || e.touches[0].clientY;
+                startWidth = parseInt(getComputedStyle(item).width, 10);
+                startHeight = parseInt(getComputedStyle(item).height, 10);
 
                 document.addEventListener('mousemove', resize);
                 document.addEventListener('mouseup', stopResize);
-                document.addEventListener('touchmove', resize);
+                document.addEventListener('touchmove', resize, { passive: false });
                 document.addEventListener('touchend', stopResize);
             };
 
             const resize = (e) => {
                 if (!isResizing) return;
-                const touch = e.touches ? e.touches[0] : e;
-                const dx = touch.clientX - startX;
-                const dy = touch.clientY - startY;
+                const dx = (e.clientX || e.touches[0].clientX) - startX;
+                const dy = (e.clientY || e.touches[0].clientY) - startY;
 
                 item.style.width = `${startWidth + dx}px`;
                 item.style.height = `${startHeight + dy}px`;
@@ -312,8 +331,10 @@
 
             item.addEventListener('mousedown', startDrag);
             item.addEventListener('touchstart', startDrag, { passive: false });
-            handle.addEventListener('mousedown', startResize);
-            handle.addEventListener('touchstart', startResize, { passive: false });
+
+            const resizeHandle = item.querySelector('.resize-handle');
+            resizeHandle.addEventListener('mousedown', startResize);
+            resizeHandle.addEventListener('touchstart', startResize, { passive: false });
         }
     </script>
 </body>
